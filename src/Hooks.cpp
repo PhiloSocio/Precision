@@ -27,6 +27,8 @@ namespace Hooks
 
 		FirstPersonStateHook::Hook();
 
+		ProjectileHook::Hook();
+
 		logger::trace("...success");
 	}
 
@@ -1550,7 +1552,7 @@ namespace Hooks
 							for (auto constraint : a_driver->ragdoll->constraints) {
 								if (constraint->data->GetType() == RE::hkpConstraintData::ConstraintType::kRagdoll) {
 									RE::hkpRagdollConstraintData* data = static_cast<RE::hkpRagdollConstraintData*>(constraint->data);
-									if (constraint->constraintInternal) {  // needed to tell master from slave
+									if (constraint->internal) {  // needed to tell master from slave
 										RE::hkpRigidBody* bodyA = constraint->GetRigidBodyA();
 										RE::hkpRigidBody* bodyB = constraint->GetRigidBodyB();
 
@@ -1563,7 +1565,7 @@ namespace Hooks
 										RE::hkVector4 pivotB;
 										hkVector4_setTransformedPos(pivotB, bodyB->motion.motionState.transform, pivotBbodySpace);
 
-										RE::hkVector4 slavePivot = bodyA == constraint->constraintInternal->entities[1 - constraint->constraintInternal->whoIsMaster] ? pivotA : pivotB;
+										RE::hkVector4 slavePivot = bodyA == constraint->internal->entities[1 - constraint->internal->whoIsMaster] ? pivotA : pivotB;
 
 										SetPivotInWorldSpace(data, bodyA->motion.motionState.transform, bodyB->motion.motionState.transform, slavePivot);
 									}
@@ -2117,6 +2119,17 @@ namespace Hooks
 		PrecisionHandler::GetSingleton()->RemoveAllAttackCollisions(RE::PlayerCharacter::GetSingleton()->GetHandle());
 	}
 
+	bool AIHooks::IsHuman(RE::Actor* a_actor)
+	{
+		if (auto race = a_actor->GetRace()) {
+			if (race->behaviorGraphProjectNames[0] == Settings::defaultMaleBehaviorGraph || race->behaviorGraphProjectNames[1] == Settings::defaultFemaleBehaviorGraph) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	RE::NiAVObject* AIHooks::Clone3D(RE::TESObjectWEAP* a_this, RE::TESObjectREFR* a_ref, bool a_arg3)
 	{
 		auto ret = _Clone3D(a_this, a_ref, a_arg3);
@@ -2126,7 +2139,7 @@ namespace Hooks
 
 	float AIHooks::GetMaxRange(RE::Actor* a_actor, RE::TESBoundObject* a_object, int64_t a3)
 	{
-		if (Settings::bHookAIWeaponReach) {
+		if (Settings::bHookAIWeaponReach && IsHuman(a_actor)) {
 			float reach = 0.f;
 			if (PrecisionHandler::GetInventoryWeaponReach(a_actor, a_object, reach)) {
 				return reach;
@@ -2138,7 +2151,7 @@ namespace Hooks
 
 	float AIHooks::GetUnarmedReach(RE::Actor* a_actor)
 	{
-		if (Settings::bHookAIWeaponReach) {
+		if (Settings::bHookAIWeaponReach && IsHuman(a_actor)) {
 			if (a_actor) {
 				if (auto& currentProcess = a_actor->GetActorRuntimeData().currentProcess) {
 					if (currentProcess->cachedValues) {
@@ -2154,4 +2167,37 @@ namespace Hooks
 		return _GetUnarmedReach(a_actor);
 	}
 
+	void ProjectileHook::GetLinearVelocityArrow(RE::Projectile* a_this, RE::NiPoint3& a_outVelocity)
+	{
+		if (a_this) {
+			auto& rtData = a_this->GetProjectileRuntimeData();
+			if (rtData.livingTime <= 0.f) {// *g_deltaTime) {
+				auto precisionHandler = PrecisionHandler::GetSingleton();
+				RE::ActorHandle actorHandle = rtData.shooter.get().get() ? (rtData.shooter.get()->As<RE::Actor>() ? rtData.shooter.get()->As<RE::Actor>()->GetHandle() : RE::ActorHandle()) : RE::ActorHandle();
+				CollisionDefinition collisionDefinition;
+				RE::BSAnimationGraphEvent event("Collision_Add", rtData.shooter.get().get(), "node(PROJECTILE)");
+				if (precisionHandler->ParseCollisionEvent(&event, CollisionEventType::kAdd, collisionDefinition)) {
+					precisionHandler->AddAttackCollision(actorHandle, collisionDefinition, a_this);
+					logger::info("AttackTrail node {} from {}"sv, event.payload.c_str(), actorHandle.native_handle());
+				}
+			}
+		}
+		return _GetLinearVelocityArrow(a_this, a_outVelocity);
+	}
+
+	RE::ArrowProjectile* ProjectileHook::LaunchProjectile(RE::ArrowProjectile* a_result, RE::Projectile::LaunchData& a_data)
+	{
+		if (a_result) {
+			auto& rtData = a_result->GetProjectileRuntimeData();
+			auto precisionHandler = PrecisionHandler::GetSingleton();
+			RE::ActorHandle actorHandle = rtData.shooter.get().get() ? (rtData.shooter.get()->As<RE::Actor>() ? rtData.shooter.get()->As<RE::Actor>()->GetHandle() : RE::ActorHandle()) : RE::ActorHandle();
+			CollisionDefinition collisionDefinition;
+			RE::BSAnimationGraphEvent event("Collision_Add", rtData.shooter.get().get(), "node(PROJECTILE)");
+			precisionHandler->ParseCollisionEvent(&event, CollisionEventType::kAdd, collisionDefinition);
+			precisionHandler->AddAttackCollision(actorHandle, collisionDefinition, a_result);
+			logger::info("!AttackTrail node {}!"sv, event.payload.c_str());
+		}
+		logger::info("!AttackTrail node!"sv);
+		return _LaunchProjectile(a_result, a_data);
+	}
 }

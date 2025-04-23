@@ -89,6 +89,7 @@ public:
 	void StartCollision(RE::ActorHandle a_actorHandle, uint32_t a_activeGraphIdx);
 	bool AddAttack(RE::ActorHandle a_actorHandle, const AttackDefinition& a_attackDefinition);
 	void AddAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition);
+	void AddAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile);
 	bool RemoveRecoilCollision(RE::ActorHandle a_actorHandle);
 	bool RemoveAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition);
 	bool RemoveAttackCollision(RE::ActorHandle a_actorHandle, std::shared_ptr<AttackCollision> a_attackCollision);
@@ -128,6 +129,8 @@ public:
 	void OnPostLoadGame();
 
 	void ApplyHitImpulse(RE::ObjectRefHandle a_refHandle, RE::hkpRigidBody* a_rigidBody, const RE::NiPoint3& a_hitVelocity, const RE::hkVector4& a_hitPosition, float a_impulseMult, bool a_bIsActiveRagdoll, bool a_bAttackerIsPlayer, bool a_bIsDeferred = false);
+	void AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::InventoryEntryData* a_weaponItem, bool a_bIsLeftHand, bool a_bTrailUseTrueLength, std::optional<TrailOverride> a_trailOverride);
+	void AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::Projectile* a_projectile, std::optional<TrailOverride> a_trailOverride);
 
 	static void AddHitstop(RE::ActorHandle a_actorHandle, float a_hitstopLength, bool a_bReceived);
 	static void UpdateHitstop(RE::ActorHandle a_actorHandle, float a_deltaTime);

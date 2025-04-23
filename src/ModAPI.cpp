@@ -220,4 +220,14 @@ namespace Messaging
 		bool bAttackerIsPlayer = a_sourceActorHandle.native_handle() == 0x100000;
 		PrecisionHandler::GetSingleton()->ApplyHitImpulse(a_targetActorHandle, a_rigidBody, a_hitVelocity, a_hitPosition, a_impulseMult, true, bAttackerIsPlayer);
 	}
+
+	void PrecisionInterface::AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::InventoryEntryData* a_weaponItem, bool a_bIsLeftHand, bool a_bTrailUseTrueLength, std::optional<TrailOverride> a_trailOverride) noexcept
+	{
+		PrecisionHandler::GetSingleton()->AddAttackTrail(a_trailParentNode, a_sourceActorHandle, a_sourceActorParentCell, a_weaponItem, a_bIsLeftHand, a_bTrailUseTrueLength, a_trailOverride);
+	}
+
+	void PrecisionInterface::AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::Projectile* a_projectile, std::optional<TrailOverride> a_trailOverride) noexcept
+	{
+		PrecisionHandler::GetSingleton()->AddAttackTrail(a_trailParentNode, a_sourceActorHandle, a_sourceActorParentCell, a_projectile, a_trailOverride);
+	}
 }

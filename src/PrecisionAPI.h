@@ -108,6 +108,24 @@ namespace PRECISION_API
 		RE::hkpShapeKey hittingBodyShapeKey;
 	};
 
+	struct TrailOverride
+	{
+		TrailOverride() = default;
+
+		TrailOverride(std::optional<float> a_lifetimeMult,
+			std::optional<RE::NiColorA> a_baseColorOverride,
+			std::optional<float> a_baseColorScaleMult,
+			std::optional<std::string> a_meshOverride) :
+			lifetimeMult(a_lifetimeMult),
+			baseColorOverride(a_baseColorOverride), baseColorScaleMult(a_baseColorScaleMult), meshOverride(a_meshOverride)
+		{}
+
+		std::optional<float> lifetimeMult;
+		std::optional<RE::NiColorA> baseColorOverride;
+		std::optional<float> baseColorScaleMult;
+		std::optional<std::string> meshOverride;
+	};
+
 	enum class CollisionFilterComparisonResult : uint8_t
 	{
 		Continue,  // Do not affect whether the two objects should collide
@@ -362,6 +380,28 @@ namespace PRECISION_API
 		/// <param name="a_hitPosition">Hit position</param>
 		/// <param name="a_impulseMult">Impulse strength multiplier</param>
 		virtual void ApplyHitImpulse2(RE::ActorHandle a_targetActorHandle, RE::ActorHandle a_sourceActorHandle, RE::hkpRigidBody* a_rigidBody, const RE::NiPoint3& a_hitVelocity, const RE::hkVector4& a_hitPosition, float a_impulseMult) noexcept = 0;
+
+		/// <summary>
+		/// Adds a trail to the node.
+		/// </summary>
+		/// <param name="a_trailParentNode">Your assigned plugin handle</param>
+		/// <param name="a_sourceActorHandle">The callback function</param>
+		/// <param name="a_sourceActorParentCell">Target actor handle</param>
+		/// <param name="a_weaponItem">Source actor handle</param>
+		/// <param name="a_bIsLeftHand">Hit rigid body</param>
+		/// <param name="a_bTrailUseTrueLength">Hit velocity vector</param>
+		/// <param name="a_trailOverride">Hit position</param>
+		virtual void AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::InventoryEntryData* a_weaponItem, bool a_bIsLeftHand, bool a_bTrailUseTrueLength, std::optional<TrailOverride> a_trailOverride) noexcept = 0;
+
+		/// <summary>
+		/// Adds a trail to the node.
+		/// </summary>
+		/// <param name="a_trailParentNode">Your assigned plugin handle</param>
+		/// <param name="a_sourceActorHandle">The callback function</param>
+		/// <param name="a_sourceActorParentCell">Target actor handle</param>
+		/// <param name="a_projectile">Source actor handle</param>
+		/// <param name="a_trailOverride">Hit position</param>
+		virtual void AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::Projectile* a_projectile, std::optional<TrailOverride> a_trailOverride) noexcept = 0;
 	};
 
 	typedef void* (*_RequestPluginAPI)(const InterfaceVersion interfaceVersion);
@@ -374,8 +414,8 @@ namespace PRECISION_API
 	/// <returns>The pointer to the API singleton, or nullptr if request failed</returns>
 	[[nodiscard]] inline void* RequestPluginAPI(const InterfaceVersion a_interfaceVersion = InterfaceVersion::V4)
 	{
-		auto pluginHandle = GetModuleHandle("Precision.dll");
-		_RequestPluginAPI requestAPIFunction = (_RequestPluginAPI)SKSE::WinAPI::GetProcAddress(pluginHandle, "RequestPluginAPI");
+		auto pluginHandle = REX::W32::GetModuleHandleA("Precision.dll");
+		_RequestPluginAPI requestAPIFunction = (_RequestPluginAPI)REX::W32::GetProcAddress(pluginHandle, "RequestPluginAPI");
 		if (requestAPIFunction) {
 			return requestAPIFunction(a_interfaceVersion);
 		}

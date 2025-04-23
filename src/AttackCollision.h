@@ -6,6 +6,7 @@
 struct AttackCollision
 {
 	AttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition);
+	AttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile);
 
 	~AttackCollision();
 
@@ -24,6 +25,7 @@ struct AttackCollision
 	float visualWeaponLength = 0.f;
 
 	bool Add(const CollisionDefinition& a_collisionDefinition);
+	bool Add(const CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile);
 	bool Remove();
 	bool RemoveRecoilCollision();
 
@@ -69,6 +71,7 @@ struct AttackCollisions
 	[[nodiscard]] std::shared_ptr<AttackCollision> GetAttackCollisionFromRecoilNode(RE::NiAVObject* a_node) const;
 	[[nodiscard]] std::shared_ptr<AttackCollision> GetAttackCollision(std::string_view a_nodeName) const;
 	void AddAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition);
+	void AddAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile);
 	bool RemoveRecoilCollision();
 	[[nodiscard]] bool RemoveAttackCollision(const CollisionDefinition& a_collisionDefinition);
 	[[nodiscard]] bool RemoveAttackCollision(std::shared_ptr<AttackCollision> a_attackCollision);

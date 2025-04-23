@@ -85,6 +85,63 @@ AttackTrail::AttackTrail(RE::NiNode* a_node, RE::ActorHandle a_actorHandle, RE::
 	}
 }
 
+AttackTrail::AttackTrail(RE::NiNode* a_node, RE::ActorHandle a_actorHandle, RE::TESObjectCELL* a_cell, RE::Projectile* a_projectile, std::optional<TrailOverride> a_trailOverride /*= std::nullopt*/) :
+	actorHandle(a_actorHandle)
+{
+	weaponRotation = RE::NiMatrix3(0.f, 0.f, -RE::NI_HALF_PI);
+	if (a_node && a_node->parent && a_cell && a_projectile) {
+		logger::info("AttackTrail node: {}, parent: {}"sv, a_node->name.c_str(), a_node->parent->name.c_str());
+		collisionNode = RE::NiPointer<RE::NiNode>(a_node);
+		collisionParentNode = RE::NiPointer<RE::NiNode>(a_node->parent);
+		collisionNodeLocalTransform = collisionNode->local;
+		//collisionNodeLocalTransform.rotate = collisionNodeLocalTransform.rotate * weaponRotation;
+
+		std::string trailMeshPath = Settings::attackTrailMeshPath;
+
+		if (a_trailOverride) {
+			if (a_trailOverride->lifetimeMult) {
+				lifetimeMult = *a_trailOverride->lifetimeMult;
+			}
+			if (a_trailOverride->baseColorOverride) {
+				baseColorOverride = *a_trailOverride->baseColorOverride;
+			}
+			if (a_trailOverride->baseColorScaleMult) {
+				baseColorScaleMult = *a_trailOverride->baseColorScaleMult;
+			}
+			if (a_trailOverride->meshOverride) {
+				trailMeshPath = *a_trailOverride->meshOverride;
+			}
+		} else {
+			TrailDefinition trailDefinition;
+			auto sourceWeapon = a_projectile->GetProjectileRuntimeData().weaponSource;
+			auto sourceWeaponItem = sourceWeapon ? sourceWeapon->As<RE::InventoryEntryData>() : nullptr;
+			auto shooter = a_actorHandle.get().get();
+			bool bIsLeftHand = sourceWeapon ? sourceWeapon == shooter->GetEquippedObject(true) : false;
+			if (GetTrailDefinition(a_actorHandle, sourceWeaponItem, bIsLeftHand, trailDefinition)) {
+				if (trailDefinition.trailOverride.lifetimeMult) {
+					lifetimeMult = *trailDefinition.trailOverride.lifetimeMult;
+				}
+				if (trailDefinition.trailOverride.baseColorOverride) {
+					baseColorOverride = *trailDefinition.trailOverride.baseColorOverride;
+				}
+				if (trailDefinition.trailOverride.baseColorScaleMult) {
+					baseColorScaleMult = *trailDefinition.trailOverride.baseColorScaleMult;
+				}
+				if (trailDefinition.trailOverride.meshOverride) {
+					trailMeshPath = *trailDefinition.trailOverride.meshOverride;
+				}
+			}
+		}
+
+		trailParticle = RE::NiPointer<RE::BSTempEffectParticle>(RE::BSTempEffectParticle::Spawn(a_cell, 10.f, trailMeshPath.data(), collisionParentNode->world.rotate, collisionParentNode->world.translate, 1.f, 7, nullptr));
+
+		/*RE::NiMatrix3 bloodTrailRotation = collisionParentNode->world.rotate * weaponRotation;
+		RE::NiPoint3 bloodTipOffset = { 0.f, length, 0.f };
+		RE::NiPoint3 bloodTrailLocation = collisionParentNode->world.translate + (collisionParentNode->world.rotate * bloodTipOffset);
+		bloodTrailParticle = RE::NiPointer<RE::BSTempEffectParticle>(RE::BSTempEffectParticle::Spawn(a_cell, 10.f, Settings::bloodTrailMeshPath.data(), bloodTrailRotation, bloodTrailLocation, 1.f, 7, collisionParentNode.get()));*/
+	}
+}
+
 bool AttackTrail::Update(float a_deltaTime)
 {
 	if (Settings::bDisplayTrails) {

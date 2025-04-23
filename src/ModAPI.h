@@ -18,6 +18,7 @@ namespace Messaging
 	using CollisionFilterSetupCallback = ::PRECISION_API::CollisionFilterSetupCallback;
 	using ContactListenerCallback = ::PRECISION_API::ContactListenerCallback;
 	using PrecisionLayerSetupCallback = ::PRECISION_API::PrecisionLayerSetupCallback;
+	using TrailOverride = ::PRECISION_API::TrailOverride;
 
 	class PrecisionInterface : public InterfaceVersion4
 	{
@@ -73,5 +74,9 @@ namespace Messaging
 		RE::NiAVObject* GetOriginalFromClone(RE::ActorHandle a_actorHandle, RE::NiAVObject* a_node) noexcept override;
 		RE::hkpRigidBody* GetOriginalFromClone(RE::ActorHandle a_actorHandle, RE::hkpRigidBody* a_hkpRigidBody) noexcept override;
 		virtual void ApplyHitImpulse2(RE::ActorHandle a_targetActorHandle, RE::ActorHandle a_sourceActorHandle, RE::hkpRigidBody* a_rigidBody, const RE::NiPoint3& a_hitVelocity, const RE::hkVector4& a_hitPosition, float a_impulseMult) noexcept override;
+
+		// InterfaceVersion4+
+		virtual void AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::InventoryEntryData* a_weaponItem, bool a_bIsLeftHand, bool a_bTrailUseTrueLength, std::optional<TrailOverride> a_trailOverride) noexcept override;
+		virtual void AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::Projectile* a_projectile, std::optional<TrailOverride> a_trailOverride) noexcept override;
 	};
 }

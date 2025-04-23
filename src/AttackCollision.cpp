@@ -15,14 +15,28 @@ AttackCollision::AttackCollision(RE::ActorHandle a_actorHandle, const CollisionD
 			if (cell) {
 				if (Add(a_collisionDefinition)) {
 					bool bIsWeapon = a_collisionDefinition.nodeName == "WEAPON"sv || a_collisionDefinition.nodeName == "SHIELD"sv;
+					bool bIsLeftHand = a_collisionDefinition.nodeName != "WEAPON"sv;
+
+					//	double check for animated weapons
+					const auto root = actor->Get3D();
+					const auto weaponBoneR = root ? root->GetObjectByName("WEAPON") : nullptr;
+					const auto weaponBoneL = root ? root->GetObjectByName("SHIELD") : nullptr;
+					const auto weaponNodeR = weaponBoneR ? weaponBoneR->AsNode() : nullptr;
+					const auto weaponNodeL = weaponBoneL ? weaponBoneL->AsNode() : nullptr;
+					const auto object = root ? root->GetObjectByName(a_collisionDefinition.nodeName) : nullptr;
+					const auto node = object ? object->AsNode() : nullptr;
+
+					if (!bIsWeapon && node && weaponNodeR && weaponNodeL) {
+						if (Utils::HasParent(weaponBoneR->AsNode(), node)){bIsLeftHand = false; bIsWeapon = true;}
+						else if (Utils::HasParent(weaponBoneL->AsNode(), node)){bIsLeftHand = true; bIsWeapon = true;}
+					}
+
 					if (bIsWeapon) {
 						RE::InventoryEntryData* weaponItem = nullptr;
 						RE::TESForm* equipment = nullptr;
 						RE::TESObjectWEAP* equippedWeapon = nullptr;
 
 						bool bIsBashing = false;
-
-						bool bIsLeftHand = a_collisionDefinition.nodeName != "WEAPON"sv;
 
 						if (bIsLeftHand) {
 							weaponItem = currentProcess->middleHigh->leftHand;
@@ -118,7 +132,67 @@ AttackCollision::AttackCollision(RE::ActorHandle a_actorHandle, const CollisionD
 		}
 	}
 }
+AttackCollision::AttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile) :
+	actorHandle(a_actorHandle), nodeName(a_collisionDefinition.nodeName)
+{
+	lastUpdate = *g_durationOfApplicationRunTimeMS;
 
+	if (auto actor = a_actorHandle.get()) {
+		if (auto currentProcess = actor->GetActorRuntimeData().currentProcess) {
+			auto cell = actor->GetParentCell();
+			if (cell && a_projectile) {
+				if (Add(a_collisionDefinition, a_projectile)) {
+					bool bShowTrail = Settings::bDisplayTrails && !a_collisionDefinition.bNoTrail;
+					if (bShowTrail) {
+						PrecisionHandler::GetSingleton()->_attackTrails.emplace_back(std::make_shared<AttackTrail>(attackCollisionNode.get(), actorHandle, cell, a_projectile, a_collisionDefinition.trailOverride));
+						logger::info("AttackTrail node {}"sv, a_projectile->GetName());
+					}
+
+					Utils::Capsule capsule;
+					Utils::GetCapsuleParams(attackCollisionNode.get(), capsule);
+					capsuleLength = fmax(capsule.a.GetDistance(capsule.b), capsule.radius * 2.f);
+
+					ID = a_collisionDefinition.ID;
+					bNoRecoil = a_collisionDefinition.bNoRecoil;
+					damageMult = a_collisionDefinition.damageMult;
+					groundShake = a_collisionDefinition.groundShake;
+
+					lifetime = a_collisionDefinition.duration;
+					if (a_collisionDefinition.duration) {
+						if (lifetime == 0) {
+							lifetime = Settings::fDefaultCollisionLifetime;
+							bool bPowerAttack = false;
+							if (auto& attackData = Actor_GetAttackData(actor.get())) {
+								bPowerAttack = attackData->data.flags.any(RE::AttackData::AttackFlag::kPowerAttack);
+							}
+							if (bPowerAttack) {
+								*lifetime *= Settings::fDefaultCollisionLifetimePowerAttackMult;
+							}
+						}
+
+						float weaponSpeedMult = 1.f;
+						actor->GetGraphVariableFloat("weaponSpeedMult"sv, weaponSpeedMult);
+						if (weaponSpeedMult == 0.f) {
+							weaponSpeedMult = 1.f;
+						}
+						*lifetime *= (1.f / weaponSpeedMult);
+
+						// really hacky fix for a weird issue
+						if (*g_deltaTime > 0.011f) {
+							*lifetime += *g_deltaTime;
+						}
+
+						if (a_collisionDefinition.durationMult) {
+							*lifetime *= *a_collisionDefinition.durationMult;
+						}
+					}
+				} else {
+					logger::error("Failed to add attack collision for projectile {}"sv, a_projectile->GetName());
+				}
+			}
+		}
+	}
+}
 AttackCollision::~AttackCollision()
 {
 	Remove();
@@ -166,6 +240,18 @@ bool AttackCollision::Add(const CollisionDefinition& a_collisionDefinition)
 
 	bool bIsRightWeapon = nodeName == "WEAPON"sv;
 	bool bIsLeftWeapon = nodeName == "SHIELD"sv;
+
+	//	double check for animated weapons
+	if (!bIsRightWeapon && !bIsLeftWeapon) {
+		const auto weaponBoneR = root->GetObjectByName("WEAPON");
+		const auto weaponBoneL = root->GetObjectByName("SHIELD");
+		const auto weaponNodeR = weaponBoneR ? weaponBoneR->AsNode() : nullptr;
+		const auto weaponNodeL = weaponBoneL ? weaponBoneL->AsNode() : nullptr;
+		if (weaponNodeR && weaponNodeL) {
+			if (Utils::HasParent(weaponBoneR->AsNode(), node)) {bIsRightWeapon = true;}
+			else if (Utils::HasParent(weaponBoneL->AsNode(), node)) {bIsLeftWeapon = true;}
+		}
+	}
 
 	RE::NiPoint3 tipOffset;
 
@@ -357,6 +443,242 @@ bool AttackCollision::Add(const CollisionDefinition& a_collisionDefinition)
 
 	return true;
 }
+bool AttackCollision::Add(const CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile)
+{
+	auto actor = actorHandle.get().get();
+	if (!actor) {
+		return false;
+	}
+
+	auto cell = actor->GetParentCell();
+	if (!cell) {
+		return false;
+	}
+
+	auto world = cell->GetbhkWorld();
+	if (!world) {
+		return false;
+	}
+
+	auto root = actor->Get3D();
+	if (!root) {
+		return false;
+	}
+
+	auto bone = a_projectile ? a_projectile->Get3D2() : nullptr;
+	if (!bone) {
+		logger::warn("AttackTrail bone null!"sv);
+		return false;
+	}
+
+	auto node = bone->AsNode();
+	if (!node) {
+		logger::warn("AttackTrail node null!"sv);
+		return false;
+	}
+
+	float length = 0.f;
+	float radius = 0.f;
+	RE::hkVector4 vertexA{};
+	RE::hkVector4 vertexB{};
+
+	float havokWorldScale = *g_worldScale;
+	float havokInvWorldScale = *g_worldScaleInverse;
+
+	auto sourceWeapon = a_projectile->GetProjectileRuntimeData().weaponSource;
+	bool bIsRightWeapon = sourceWeapon ? sourceWeapon == actor->GetEquippedObject(false) : false;
+	bool bIsLeftWeapon = sourceWeapon ? sourceWeapon == actor->GetEquippedObject(true) : false;
+
+	RE::NiPoint3 tipOffset;
+
+	bool bIsShieldBashing = false;
+	bool bIsBowBashing = false;
+	bool bIsBashing = actor->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash;
+
+	if (bIsRightWeapon && !bIsRightWeapon) {
+		logger::info("projectile source weapon exits!"sv);
+		RE::TESObjectWEAP* currentWeapon = nullptr;
+
+		if (!bIsBashing) {
+			if (auto& attackData = Actor_GetAttackData(actor)) {
+				bIsBashing = attackData->event == "bashStart"sv;
+			}
+		}
+
+		auto currentProcess = actor->GetActorRuntimeData().currentProcess;
+
+		if (bIsBashing) {
+			auto rightHandEquipment = currentProcess->GetEquippedRightHand();
+			auto leftHandEquipment = currentProcess->GetEquippedLeftHand();
+
+			bool bIsBashingWithLeftHand = leftHandEquipment && leftHandEquipment != rightHandEquipment;  // has something else in the left hand so use the left hand node
+			if (!bIsBashingWithLeftHand && rightHandEquipment) {                                         // check if it's a bow, bows are held in the left hand even if they're technically right hand
+				if (auto rightHandWeapon = rightHandEquipment->As<RE::TESObjectWEAP>()) {
+					if (rightHandWeapon->weaponData.animationType == RE::WEAPON_TYPE::kBow) {
+						bIsBashingWithLeftHand = true;
+						bIsBowBashing = true;
+					}
+				}
+			}
+
+			if (bIsBashingWithLeftHand) {
+				bIsShieldBashing = leftHandEquipment && leftHandEquipment->IsArmor();
+
+				nodeName = "SHIELD"sv;
+
+				bone = root->GetObjectByName(nodeName);
+				if (!bone) {
+					return false;
+				}
+				node = bone->AsNode();
+				if (!node) {
+					return false;
+				}
+
+				if (leftHandEquipment) {
+					currentWeapon = leftHandEquipment->As<RE::TESObjectWEAP>();
+				}
+			} else {
+				if (rightHandEquipment) {
+					currentWeapon = rightHandEquipment->As<RE::TESObjectWEAP>();
+				}
+			}
+		}
+
+		RE::NiAVObject* weaponNode = nullptr;
+		if (node->children.size() > 0 && node->children[0]) {
+			weaponNode = node->children[0].get();
+		}
+
+		// sum up mults
+		float lengthMult = 1.f;
+		float radiusMult = 1.f;
+
+		if (a_collisionDefinition.lengthMult) {
+			lengthMult *= *a_collisionDefinition.lengthMult;
+		}
+
+		if (a_collisionDefinition.radiusMult) {
+			radiusMult *= *a_collisionDefinition.radiusMult;
+		}
+
+		if (a_collisionDefinition.transform) {
+			lengthMult *= a_collisionDefinition.transform->scale;
+			radiusMult *= a_collisionDefinition.transform->scale;
+		}
+
+		if (!currentWeapon) {
+			if (bIsRightWeapon) {
+				if (auto rightHandEquipment = currentProcess->GetEquippedRightHand()) {
+					currentWeapon = rightHandEquipment->As<RE::TESObjectWEAP>();
+				}
+			} else if (bIsLeftWeapon) {
+				if (auto leftHandEquipment = currentProcess->GetEquippedLeftHand()) {
+					currentWeapon = leftHandEquipment->As<RE::TESObjectWEAP>();
+				}
+			}
+		}
+
+		// calc length and radius
+		length = PrecisionHandler::GetWeaponAttackLength(actorHandle, weaponNode, currentWeapon, a_collisionDefinition.capsuleLength, lengthMult) * havokWorldScale;
+		radius = PrecisionHandler::GetWeaponAttackRadius(actorHandle, currentWeapon, a_collisionDefinition.capsuleRadius, radiusMult) * havokWorldScale;
+
+		// special cases
+		if (bIsShieldBashing || bIsBowBashing) {
+			float halfLength = length * 0.5f;
+			vertexA.quad.m128_f32[0] = halfLength;
+			vertexB.quad.m128_f32[0] = -halfLength;
+			if (bIsShieldBashing) {
+				radius = length;
+			}
+		} else {
+			vertexA.quad.m128_f32[0] = length;
+		}
+
+		if (a_collisionDefinition.bWeaponTip) {
+			float offset = (length - radius) * havokInvWorldScale;
+			tipOffset = { 0.f, offset, 0.f };
+		}
+	} else {
+		logger::info("AttackTrail node exits!"sv);
+		// Set default fallback values based on hand collision's capsule
+		radius = 0.068565f;
+		vertexA = { 0.002939f, 0.003175f, 0.054681f, 0.f };
+		vertexB = { 0.001875f, 0.003175f, 0.054681f, 0.f };
+
+		// sum up mults
+		float lengthMult = 1.f;
+		float radiusMult = 1.f;
+
+		if (a_collisionDefinition.lengthMult) {
+			lengthMult *= *a_collisionDefinition.lengthMult;
+		}
+
+		if (a_collisionDefinition.radiusMult) {
+			radiusMult *= *a_collisionDefinition.radiusMult;
+		}
+
+		if (a_collisionDefinition.transform) {
+			radiusMult *= a_collisionDefinition.transform->scale;
+			lengthMult *= a_collisionDefinition.transform->scale;
+		}
+
+		// calc attack dimensions
+		if (!PrecisionHandler::GetNodeAttackDimensions(actorHandle, node, a_collisionDefinition.capsuleLength, lengthMult, a_collisionDefinition.capsuleRadius, radiusMult, vertexA, vertexB, radius)) {
+			return false;
+		}
+	}
+
+	auto attackNode = RE::NiNode::Create(0);
+	node->AttachChild(attackNode, true);
+
+	if (a_collisionDefinition.transform) {
+		attackNode->local = *a_collisionDefinition.transform;
+	}
+
+	if (a_collisionDefinition.bWeaponTip) {
+		attackNode->local.translate += tipOffset;
+	}
+
+	if (bIsRightWeapon || bIsLeftWeapon) {
+		RE::NiMatrix3 weaponRotation(0.f, RE::NI_HALF_PI, -RE::NI_HALF_PI);
+		RE::NiMatrix3 newRotation = weaponRotation * attackNode->local.rotate;
+		attackNode->local.rotate = newRotation;
+	}
+
+	CreateCollision(world, actor, node, attackNode, vertexA, vertexB, radius, CollisionLayer::kPrecisionAttack);
+
+	attackCollisionNode = RE::NiPointer<RE::NiNode>(attackNode);
+
+	// Create recoil collision node
+	bool bIsPlayer = actor->IsPlayerRef();
+	if (!a_collisionDefinition.bWeaponTip && !a_collisionDefinition.bNoRecoil && !bIsBashing &&
+		(bIsRightWeapon || bIsLeftWeapon) &&
+		((bIsPlayer && Settings::bRecoilPlayer) || (!bIsPlayer && Settings::bRecoilNPC))) {
+		auto recoilNode = RE::NiNode::Create(0);
+		node->AttachChild(recoilNode, true);
+
+		if (a_collisionDefinition.transform) {
+			recoilNode->local = *a_collisionDefinition.transform;
+		}
+
+		RE::NiMatrix3 weaponRotation(0.f, RE::NI_HALF_PI, -RE::NI_HALF_PI);
+		RE::NiMatrix3 newRotation = weaponRotation * recoilNode->local.rotate;
+		recoilNode->local.rotate = newRotation;
+
+		RE::hkVector4 recoilVertexA{};
+		RE::hkVector4 recoilVertexB{};
+		float recoilRadius = radius;
+
+		recoilVertexA.quad.m128_f32[0] = Settings::fRecoilCollisionLength * actor->GetScale() * havokWorldScale;
+
+		CreateCollision(world, actor, node, recoilNode, recoilVertexA, recoilVertexB, recoilRadius, CollisionLayer::kPrecisionRecoil);
+
+		recoilCollisionNode = RE::NiPointer<RE::NiNode>(recoilNode);
+	}
+
+	return true;
+}
 
 bool AttackCollision::Remove()
 {
@@ -487,8 +809,8 @@ uint32_t AttackCollision::GetDamagedCount() const
 bool AttackCollision::Update(float a_deltaTime)
 {
 	if (Settings::bDebug && Settings::bDisplayWeaponCapsule) {
-		constexpr glm::vec4 attackColor{ 1, 0, 0, 1 };
-		constexpr glm::vec4 recoilColor{ 0.2, 0.2, 0.8, 1 };
+		const glm::vec4 attackColor{ 1, 0, 0, 1 };
+		const glm::vec4 recoilColor{ 0.2, 0.2, 0.8, 1 };
 		Utils::DrawCollider(attackCollisionNode.get(), 0.f, attackColor);
 		Utils::DrawCollider(recoilCollisionNode.get(), 0.f, recoilColor);
 	}
@@ -778,6 +1100,20 @@ void AttackCollisions::AddAttackCollision(RE::ActorHandle a_actorHandle, const C
 		WriteLocker locker(lock);
 
 		_attackCollisions.emplace_back(newAttackCollision);
+	}
+}
+
+void AttackCollisions::AddAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile)
+{
+	auto newAttackCollision = std::make_shared<AttackCollision>(a_actorHandle, a_collisionDefinition, a_projectile);
+
+	if (newAttackCollision->IsValid()) {
+		WriteLocker locker(lock);
+
+		_attackCollisions.emplace_back(newAttackCollision);
+		logger::info("AttackCollision valid {}"sv, a_projectile->GetName());
+	} else {
+		logger::warn("AttackCollision invalid {}"sv, a_projectile->GetName());
 	}
 }
 

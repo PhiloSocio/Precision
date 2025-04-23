@@ -3,23 +3,7 @@
 #include <Simpleini.h>
 #include <unordered_set>
 
-struct TrailOverride
-{
-	TrailOverride() = default;
-
-	TrailOverride(std::optional<float> a_lifetimeMult,
-		std::optional<RE::NiColorA> a_baseColorOverride,
-		std::optional<float> a_baseColorScaleMult,
-		std::optional<std::string> a_meshOverride) :
-		lifetimeMult(a_lifetimeMult),
-		baseColorOverride(a_baseColorOverride), baseColorScaleMult(a_baseColorScaleMult), meshOverride(a_meshOverride)
-	{}
-
-	std::optional<float> lifetimeMult;
-	std::optional<RE::NiColorA> baseColorOverride;
-	std::optional<float> baseColorScaleMult;
-	std::optional<std::string> meshOverride;
-};
+using TrailOverride = PRECISION_API::TrailOverride;
 
 struct TrailDefinition
 {
@@ -316,6 +300,9 @@ struct Settings
 	static inline RE::BSFixedString firstPersonRecoilEvent = "recoilStart";
 	static inline RE::BSFixedString vanillaRecoilEvent = "recoilLargeStart";
 	static inline RE::BSFixedString jumpIframeNode = "NPC Spine2 [Spn2]";
+
+	static inline RE::BSFixedString defaultMaleBehaviorGraph = "DefaultMale";
+	static inline RE::BSFixedString defaultFemaleBehaviorGraph = "DefaultFemale";
 
 	static inline std::string bloodTrailMeshPath = "Effects/WeaponTrails/BloodHitHuman.nif";
 
