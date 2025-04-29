@@ -75,6 +75,7 @@ struct AttackCollisions
 	bool RemoveRecoilCollision();
 	[[nodiscard]] bool RemoveAttackCollision(const CollisionDefinition& a_collisionDefinition);
 	[[nodiscard]] bool RemoveAttackCollision(std::shared_ptr<AttackCollision> a_attackCollision);
+	[[nodiscard]] bool RemoveProjectileCollision(const CollisionDefinition& a_collisionDefinition);
 	bool RemoveAllAttackCollisions();
 
 	void OnCollisionRemoved();
@@ -102,6 +103,7 @@ private:
 	mutable Lock lock;
 
 	std::vector<std::shared_ptr<AttackCollision>> _attackCollisions{};
+	std::vector<std::shared_ptr<AttackCollision>> _projectileCollisions{};
 
 	// Hit refs shared by collisions with assigned IDs
 	std::unordered_map<uint8_t, HitRefs> _IDHitRefs{};

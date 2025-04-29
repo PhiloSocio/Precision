@@ -495,7 +495,7 @@ bool AttackCollision::Add(const CollisionDefinition& a_collisionDefinition, RE::
 	bool bIsBowBashing = false;
 	bool bIsBashing = actor->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash;
 
-	if (bIsRightWeapon && !bIsRightWeapon) {
+	if (bIsRightWeapon || bIsLeftWeapon) {
 		logger::info("projectile source weapon exits!"sv);
 		RE::TESObjectWEAP* currentWeapon = nullptr;
 
@@ -1036,6 +1036,16 @@ void AttackCollisions::Update(float a_deltaTime)
 				++it;
 			}
 		}
+		
+		for (auto it = _projectileCollisions.begin(); it != _projectileCollisions.end();) {
+			auto& collision = *it;
+			if (!collision->Update(a_deltaTime)) {
+				it = _projectileCollisions.erase(it);
+				OnCollisionRemoved();
+			} else {
+				++it;
+			}
+		}
 	}
 
 	// update and remove expired entries
@@ -1110,7 +1120,7 @@ void AttackCollisions::AddAttackCollision(RE::ActorHandle a_actorHandle, const C
 	if (newAttackCollision->IsValid()) {
 		WriteLocker locker(lock);
 
-		_attackCollisions.emplace_back(newAttackCollision);
+		_projectileCollisions.emplace_back(newAttackCollision);
 		logger::info("AttackCollision valid {}"sv, a_projectile->GetName());
 	} else {
 		logger::warn("AttackCollision invalid {}"sv, a_projectile->GetName());
@@ -1163,6 +1173,30 @@ bool AttackCollisions::RemoveAttackCollision(std::shared_ptr<AttackCollision> a_
 	if (!_attackCollisions.empty()) {
 		_attackCollisions.erase(std::remove_if(_attackCollisions.begin(), _attackCollisions.end(), [a_attackCollision](auto& attackCollision) { return attackCollision == a_attackCollision; }));
 		OnCollisionRemoved();
+	}
+
+	return prevSize != _attackCollisions.size();
+}
+
+bool AttackCollisions::RemoveProjectileCollision(const CollisionDefinition& a_collisionDefinition)
+{
+	WriteLocker locker(lock);
+
+	auto prevSize = _projectileCollisions.size();
+
+	if (!_projectileCollisions.empty()) {
+		if (a_collisionDefinition.ID) {  // remove all matching ID
+			_projectileCollisions.erase(std::remove_if(_projectileCollisions.begin(), _projectileCollisions.end(), [a_collisionDefinition](auto& attackCollision) { return !attackCollision || attackCollision->ID == a_collisionDefinition.ID; }));
+			OnCollisionRemoved();
+		} else {  // remove the first matching the node name
+			auto search = std::find_if(_projectileCollisions.begin(), _projectileCollisions.end(), [a_collisionDefinition](auto& attackCollision) { return !attackCollision || attackCollision->nodeName == a_collisionDefinition.nodeName; });
+			if (search != _projectileCollisions.end()) {
+				_projectileCollisions.erase(search);
+				OnCollisionRemoved();
+			} else {
+				logger::error("Could not find an attack collision to remove: {}", a_collisionDefinition.nodeName);
+			}
+		}
 	}
 
 	return prevSize != _attackCollisions.size();
