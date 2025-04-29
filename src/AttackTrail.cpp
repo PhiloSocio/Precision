@@ -114,8 +114,8 @@ AttackTrail::AttackTrail(RE::NiNode* a_node, RE::ActorHandle a_actorHandle, RE::
 		} else {
 			TrailDefinition trailDefinition;
 			auto sourceWeapon = a_projectile->GetProjectileRuntimeData().weaponSource;
-			auto sourceWeaponItem = sourceWeapon ? sourceWeapon->As<RE::InventoryEntryData>() : nullptr;
 			auto shooter = a_actorHandle.get().get();
+			auto sourceWeaponItem = Utils::GetInventoryEntryDataForWeapon(shooter, sourceWeapon);
 			bool bIsLeftHand = sourceWeapon ? sourceWeapon == shooter->GetEquippedObject(true) : false;
 			if (GetTrailDefinition(a_actorHandle, sourceWeaponItem, bIsLeftHand, trailDefinition)) {
 				if (trailDefinition.trailOverride.lifetimeMult) {
@@ -135,6 +135,17 @@ AttackTrail::AttackTrail(RE::NiNode* a_node, RE::ActorHandle a_actorHandle, RE::
 
 		trailParticle = RE::NiPointer<RE::BSTempEffectParticle>(RE::BSTempEffectParticle::Spawn(a_cell, 10.f, trailMeshPath.data(), collisionParentNode->world.rotate, collisionParentNode->world.translate, 1.f, 7, nullptr));
 
+		float length = 0.f;
+		Utils::Capsule capsule;
+		Utils::GetCapsuleParams(a_node, capsule);
+
+		length = capsule.a.GetDistance(capsule.b);
+		scale = fmax(length, capsule.radius) * 0.01f;
+
+		if (length == 0.f && a_projectile && a_projectile->GetProjectileBase()) {
+			length = a_projectile->GetProjectileBase()->data.collisionRadius;
+			scale = length * 0.01f;
+		}
 		/*RE::NiMatrix3 bloodTrailRotation = collisionParentNode->world.rotate * weaponRotation;
 		RE::NiPoint3 bloodTipOffset = { 0.f, length, 0.f };
 		RE::NiPoint3 bloodTrailLocation = collisionParentNode->world.translate + (collisionParentNode->world.rotate * bloodTipOffset);

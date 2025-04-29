@@ -526,6 +526,15 @@ bool PrecisionHandler::RemoveAttackCollision(RE::ActorHandle a_actorHandle, cons
 	return false;
 }
 
+bool PrecisionHandler::RemoveProjectileCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition)
+{
+	if (auto activeActor = GetActiveActor(a_actorHandle)) {
+		return activeActor->attackCollisions.RemoveProjectileCollision(a_collisionDefinition);
+	}
+
+	return false;
+}
+
 bool PrecisionHandler::RemoveAllAttackCollisions(RE::ActorHandle a_actorHandle)
 {
 	if (auto activeActor = GetActiveActor(a_actorHandle)) {

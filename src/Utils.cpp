@@ -1069,4 +1069,19 @@ namespace Utils
 		}
         return false;
 	}
+
+	RE::InventoryEntryData* GetInventoryEntryDataForWeapon(RE::Actor* a_actor, RE::TESBoundObject* a_weap)
+	{
+		if (a_actor && a_weap) {
+			const auto invChanges = a_actor->GetInventoryChanges();
+			RE::BSSimpleList<RE::InventoryEntryData *> *entries = nullptr;
+			entries = invChanges ? invChanges->entryList : nullptr;
+			if (entries && !entries->empty())
+				for (auto entry : *entries) {
+					if (entry && entry->object && entry->object->IsWeapon() && entry->object == a_weap) {
+						return entry;
+					}
+				}
+		} return nullptr;
+	}
 }

@@ -350,4 +350,6 @@ namespace Utils
 
 	// Returns true if they have parent-child relation
 	bool HasParent(const RE::NiNode* a_parent, const RE::NiNode* a_child);
+
+	RE::InventoryEntryData* GetInventoryEntryDataForWeapon(RE::Actor* a_actor, RE::TESBoundObject* a_weap);
 }

@@ -4,6 +4,7 @@
 #include <unordered_set>
 
 using TrailOverride = PRECISION_API::TrailOverride;
+using CollisionDefinition = PRECISION_API::CollisionDefinition;
 
 struct TrailDefinition
 {
@@ -29,50 +30,6 @@ struct TrailDefinition
 	std::optional<std::vector<std::string>> effectKeywords;
 	std::optional<std::vector<RE::TESEffectShader*>> effectShaders;
 	TrailOverride trailOverride;
-};
-
-struct CollisionDefinition
-{
-	CollisionDefinition() = default;
-
-	CollisionDefinition(std::string_view a_nodeName,
-		std::optional<uint8_t> a_ID = std::nullopt,
-		bool a_bNoRecoil = false,
-		bool a_bNoTrail = false,
-		bool a_bTrailUseTrueLength = false,
-		bool a_bWeaponTip = false,
-		float a_damageMult = 1.f,
-		std::optional<float> a_duration = std::nullopt,
-		std::optional<float> a_durationMult = std::nullopt,
-		std::optional<float> a_delay = std::nullopt,
-		std::optional<float> a_capsuleRadius = std::nullopt,
-		std::optional<float> a_radiusMult = std::nullopt,
-		std::optional<float> a_capsuleLength = std::nullopt,
-		std::optional<float> a_lengthMult = std::nullopt,
-		std::optional<RE::NiTransform> a_transform = std::nullopt,
-		std::optional<RE::NiPoint3> a_groundShake = std::nullopt,
-		std::optional<TrailOverride> a_trailOverride = std::nullopt) :
-		nodeName(a_nodeName),
-		ID(a_ID), bNoRecoil(a_bNoRecoil), bNoTrail(a_bNoTrail), bTrailUseTrueLength(a_bTrailUseTrueLength), bWeaponTip(a_bWeaponTip), damageMult(a_damageMult), duration(a_duration), durationMult(a_durationMult), delay(a_delay), capsuleRadius(a_capsuleRadius), radiusMult(a_radiusMult), capsuleLength(a_capsuleLength), lengthMult(a_lengthMult), transform(a_transform), groundShake(a_groundShake), trailOverride(a_trailOverride)
-	{}
-
-	std::string nodeName;
-	std::optional<uint8_t> ID;
-	bool bNoRecoil = false;
-	bool bNoTrail = false;
-	bool bTrailUseTrueLength = false;
-	bool bWeaponTip = false;
-	float damageMult = 1.f;
-	std::optional<float> duration;
-	std::optional<float> durationMult;
-	std::optional<float> delay;
-	std::optional<float> capsuleRadius;
-	std::optional<float> radiusMult;
-	std::optional<float> capsuleLength;
-	std::optional<float> lengthMult;
-	std::optional<RE::NiTransform> transform;
-	std::optional<RE::NiPoint3> groundShake;
-	std::optional<TrailOverride> trailOverride;
 };
 
 struct AttackDefinition

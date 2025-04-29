@@ -19,6 +19,7 @@ namespace Messaging
 	using ContactListenerCallback = ::PRECISION_API::ContactListenerCallback;
 	using PrecisionLayerSetupCallback = ::PRECISION_API::PrecisionLayerSetupCallback;
 	using TrailOverride = ::PRECISION_API::TrailOverride;
+	using CollisionDefinition = ::PRECISION_API::CollisionDefinition;
 
 	class PrecisionInterface : public InterfaceVersion4
 	{
@@ -78,5 +79,10 @@ namespace Messaging
 		// InterfaceVersion4+
 		virtual void AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::InventoryEntryData* a_weaponItem, bool a_bIsLeftHand, bool a_bTrailUseTrueLength, std::optional<TrailOverride> a_trailOverride) noexcept override;
 		virtual void AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::Projectile* a_projectile, std::optional<TrailOverride> a_trailOverride) noexcept override;
+
+		virtual void AddAttackCollision(RE::ActorHandle a_actorHandle, const RE::BSAnimationGraphEvent a_event) noexcept override;
+		virtual void AddAttackCollision(RE::ActorHandle a_actorHandle, CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile) noexcept override;
+		virtual bool RemoveAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition) noexcept override;
+		virtual bool RemoveProjectileCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition) noexcept override;
 	};
 }

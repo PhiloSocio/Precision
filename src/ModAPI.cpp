@@ -230,4 +230,32 @@ namespace Messaging
 	{
 		PrecisionHandler::GetSingleton()->AddAttackTrail(a_trailParentNode, a_sourceActorHandle, a_sourceActorParentCell, a_projectile, a_trailOverride);
 	}
+
+	void PrecisionInterface::AddAttackCollision(RE::ActorHandle a_actorHandle, const RE::BSAnimationGraphEvent a_event) noexcept
+	{
+		CollisionDefinition collisionDefinition;
+		auto precisionHandler = PrecisionHandler::GetSingleton();
+		if (precisionHandler->ParseCollisionEvent(&a_event, CollisionEventType::kAdd, collisionDefinition)) {
+			precisionHandler->AddAttackCollision(a_actorHandle, collisionDefinition);
+		}
+	}
+
+	void PrecisionInterface::AddAttackCollision(RE::ActorHandle a_actorHandle, CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile) noexcept
+	{
+		RE::BSAnimationGraphEvent event("Collision_Add", a_actorHandle.get().get(), "node(PROJECTILE)");
+		auto precisionHandler = PrecisionHandler::GetSingleton();
+		if (precisionHandler->ParseCollisionEvent(&event, CollisionEventType::kAdd, a_collisionDefinition)) {
+			precisionHandler->AddAttackCollision(a_actorHandle, a_collisionDefinition, a_projectile);
+		}
+	}
+
+	bool PrecisionInterface::RemoveAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition) noexcept
+	{
+		return PrecisionHandler::GetSingleton()->RemoveAttackCollision(a_actorHandle, a_collisionDefinition);
+	}
+
+	bool PrecisionInterface::RemoveProjectileCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition) noexcept
+	{
+		return PrecisionHandler::GetSingleton()->RemoveProjectileCollision(a_actorHandle, a_collisionDefinition);
+	}
 }
