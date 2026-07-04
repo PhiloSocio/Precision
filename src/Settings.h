@@ -5,6 +5,7 @@
 
 using TrailOverride = PRECISION_API::TrailOverride;
 using CollisionDefinition = PRECISION_API::CollisionDefinition;
+using TrailTransformOverride = PRECISION_API::TrailTransformOverride;
 
 struct TrailDefinition
 {

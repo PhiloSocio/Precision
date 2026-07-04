@@ -162,7 +162,30 @@ namespace RE
 		int16_t poseMatchingBone2;  // 04
 		WorldFromModelMode mode;    // 06
 	};
-
+/*
+	struct hkbCharacterData : hkReferencedObject
+	{
+		float unk10;
+		float unk14;
+		uint64_t unk18;
+		uint64_t unk20;
+		uint64_t unk28;
+		hkVector4 modelUpMS;                                            // 30
+		hkVector4 modelForwardMS;                                       // 40
+		hkVector4 modelRightMS;                                         // 50
+		hkArray<class hkbVariableInfo> characterPropertyInfos;          // 60
+		hkArray<int32_t> numBonesPerLod;                                // 70
+		hkRefPtr<hkbVariableValueSet> characterPropertyValues;          // 80
+		hkRefPtr<struct hkbFootIkDriverInfo> footIkDriverInfo;          // 88
+		hkRefPtr<struct hkbHandIkDriverInfo> handIkDriverInfo;          // 90
+		hkRefPtr<struct hkbCharacterStringData> stringData;             // 98
+		hkRefPtr<struct hkbMirroredSkeletonInfo> mirroredSkeletonInfo;  // A0
+		float m_scale;                                                  // A8
+		int16_t numHands;                                               // AC
+		int16_t numFloatSlots;                                          // AE
+	};
+	static_assert(sizeof(hkbCharacterData) == 0xB0);
+*/
 	class hkbEventInfo
 	{
 	public:
@@ -400,13 +423,6 @@ namespace RE
 	static_assert(offsetof(bhkRigidBodyCinfo, shape) == 0x08);
 	static_assert(offsetof(bhkRigidBodyCinfo, hkCinfo) == 0x30);
 	static_assert(sizeof(bhkRigidBodyCinfo) == 0x110);
-///	no more needed with new CLib
-//	class hkpSolverResults
-//	{
-//	public:
-//		float impulseApplied;
-//		float internalSolverData;
-//	};
 
 	class hkContactPointMaterial
 	{

@@ -323,9 +323,9 @@ void PrecisionHandler::AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHa
 	PrecisionHandler::GetSingleton()->_attackTrails.emplace_back(std::make_shared<AttackTrail>(a_trailParentNode, a_sourceActorHandle, a_sourceActorParentCell, a_weaponItem, a_bIsLeftHand, a_bTrailUseTrueLength, a_trailOverride));
 }
 
-void PrecisionHandler::AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::Projectile* a_projectile, std::optional<TrailOverride> a_trailOverride)
+void PrecisionHandler::AddTrailEffect(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, std::optional<TrailOverride> a_trailOverride, std::optional<TrailTransformOverride> a_transformOverride)
 {
-	PrecisionHandler::GetSingleton()->_attackTrails.emplace_back(std::make_shared<AttackTrail>(a_trailParentNode, a_sourceActorHandle, a_sourceActorParentCell, a_projectile, a_trailOverride));
+	PrecisionHandler::GetSingleton()->_attackTrails.emplace_back(std::make_shared<AttackTrail>(a_trailParentNode, a_sourceActorHandle, a_sourceActorParentCell, a_trailOverride, a_transformOverride));
 }
 
 void PrecisionHandler::AddHitstop(RE::ActorHandle a_actorHandle, float a_hitstopLength, bool a_bReceived)

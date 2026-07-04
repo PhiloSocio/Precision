@@ -5,7 +5,7 @@
 struct AttackTrail
 {
 	AttackTrail(RE::NiNode* a_node, RE::ActorHandle a_actorHandle, RE::TESObjectCELL* a_cell, RE::InventoryEntryData* a_weaponItem, bool a_bIsLeftHand, bool a_bTrailUseTrueLength, std::optional<TrailOverride> a_trailOverride = std::nullopt);
-	AttackTrail(RE::NiNode* a_node, RE::ActorHandle a_actorHandle, RE::TESObjectCELL* a_cell, RE::Projectile* a_projectile, std::optional<TrailOverride> a_trailOverride = std::nullopt);
+	AttackTrail(RE::NiNode* a_node, RE::ActorHandle a_actorHandle, RE::TESObjectCELL* a_cell, std::optional<TrailOverride> a_trailOverride = std::nullopt, std::optional<TrailTransformOverride> a_transformOverride = std::nullopt);
 
 	bool Update(float a_deltaTime);
 
@@ -37,6 +37,7 @@ struct AttackTrail
 
 	RE::NiMatrix3 weaponRotation;
 	RE::NiTransform collisionNodeLocalTransform;
+	std::optional<TrailTransformOverride> transformOverride;
 
 	std::vector<RE::NiTransform> trailHistory;
 	std::deque<float> segmentTimestamps;

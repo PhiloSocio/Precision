@@ -144,8 +144,8 @@ AttackCollision::AttackCollision(RE::ActorHandle a_actorHandle, const CollisionD
 				if (Add(a_collisionDefinition, a_projectile)) {
 					bool bShowTrail = Settings::bDisplayTrails && !a_collisionDefinition.bNoTrail;
 					if (bShowTrail) {
-						PrecisionHandler::GetSingleton()->_attackTrails.emplace_back(std::make_shared<AttackTrail>(attackCollisionNode.get(), actorHandle, cell, a_projectile, a_collisionDefinition.trailOverride));
-						logger::info("AttackTrail node {}"sv, a_projectile->GetName());
+					//	PrecisionHandler::GetSingleton()->_attackTrails.emplace_back(std::make_shared<AttackTrail>(attackCollisionNode.get(), actorHandle, cell, a_projectile, a_collisionDefinition.trailOverride));
+					//	logger::info("AttackTrail node {}"sv, a_projectile->GetName());
 					}
 
 					Utils::Capsule capsule;

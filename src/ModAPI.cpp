@@ -226,9 +226,9 @@ namespace Messaging
 		PrecisionHandler::GetSingleton()->AddAttackTrail(a_trailParentNode, a_sourceActorHandle, a_sourceActorParentCell, a_weaponItem, a_bIsLeftHand, a_bTrailUseTrueLength, a_trailOverride);
 	}
 
-	void PrecisionInterface::AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::Projectile* a_projectile, std::optional<TrailOverride> a_trailOverride) noexcept
+	void PrecisionInterface::AddTrailEffect(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, std::optional<TrailOverride> a_trailOverride, std::optional<TrailTransformOverride> a_transformOverride) noexcept
 	{
-		PrecisionHandler::GetSingleton()->AddAttackTrail(a_trailParentNode, a_sourceActorHandle, a_sourceActorParentCell, a_projectile, a_trailOverride);
+		PrecisionHandler::GetSingleton()->AddTrailEffect(a_trailParentNode, a_sourceActorHandle, a_sourceActorParentCell, a_trailOverride, a_transformOverride);
 	}
 
 	void PrecisionInterface::AddAttackCollision(RE::ActorHandle a_actorHandle, const RE::BSAnimationGraphEvent a_event) noexcept
