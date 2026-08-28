@@ -85,8 +85,8 @@ AttackTrail::AttackTrail(RE::NiNode* a_node, RE::ActorHandle a_actorHandle, RE::
 	}
 }
 
-AttackTrail::AttackTrail(RE::NiNode* a_node, RE::ActorHandle a_actorHandle, RE::TESObjectCELL* a_cell, std::optional<TrailOverride> a_trailOverride, std::optional<TrailTransformOverride> a_transformOverride) :
-	actorHandle(a_actorHandle), transformOverride(a_transformOverride)
+AttackTrail::AttackTrail(RE::NiNode* a_node, RE::TESObjectCELL* a_cell, std::optional<TrailOverride> a_trailOverride, std::optional<TrailTransformOverride> a_transformOverride) :
+	transformOverride(a_transformOverride)
 {
 	weaponRotation = RE::NiMatrix3(0.f, RE::NI_HALF_PI, -RE::NI_HALF_PI);
 	if (a_node && a_node->parent && a_cell) {

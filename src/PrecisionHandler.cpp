@@ -323,9 +323,9 @@ void PrecisionHandler::AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHa
 	PrecisionHandler::GetSingleton()->_attackTrails.emplace_back(std::make_shared<AttackTrail>(a_trailParentNode, a_sourceActorHandle, a_sourceActorParentCell, a_weaponItem, a_bIsLeftHand, a_bTrailUseTrueLength, a_trailOverride));
 }
 
-void PrecisionHandler::AddTrailEffect(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, std::optional<TrailOverride> a_trailOverride, std::optional<TrailTransformOverride> a_transformOverride)
+void PrecisionHandler::AddTrailEffect(RE::NiNode* a_trailParentNode, RE::TESObjectCELL* a_sourceActorParentCell, std::optional<TrailOverride> a_trailOverride, std::optional<TrailTransformOverride> a_transformOverride)
 {
-	PrecisionHandler::GetSingleton()->_attackTrails.emplace_back(std::make_shared<AttackTrail>(a_trailParentNode, a_sourceActorHandle, a_sourceActorParentCell, a_trailOverride, a_transformOverride));
+	PrecisionHandler::GetSingleton()->_attackTrails.emplace_back(std::make_shared<AttackTrail>(a_trailParentNode, a_sourceActorParentCell, a_trailOverride, a_transformOverride));
 }
 
 void PrecisionHandler::AddHitstop(RE::ActorHandle a_actorHandle, float a_hitstopLength, bool a_bReceived)
@@ -492,10 +492,10 @@ void PrecisionHandler::AddAttackCollision(RE::ActorHandle a_actorHandle, const C
 	}
 }
 
-void PrecisionHandler::AddAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile)
+void PrecisionHandler::AddAttackCollision(RE::ActorHandle a_actorHandle, RE::NiNode* a_node, CollisionDefinition& a_collisionDefinition, std::optional<TrailTransformOverride> a_transformOverride)
 {
 	if (auto activeActor = GetActiveActor(a_actorHandle)) {
-		return activeActor->attackCollisions.AddAttackCollision(a_actorHandle, a_collisionDefinition, a_projectile);
+		return activeActor->attackCollisions.AddAttackCollision(a_actorHandle, a_node, a_collisionDefinition, a_transformOverride);
 	}
 }
 
@@ -526,10 +526,10 @@ bool PrecisionHandler::RemoveAttackCollision(RE::ActorHandle a_actorHandle, cons
 	return false;
 }
 
-bool PrecisionHandler::RemoveProjectileCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition)
+bool PrecisionHandler::RemoveNodeCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition)
 {
 	if (auto activeActor = GetActiveActor(a_actorHandle)) {
-		return activeActor->attackCollisions.RemoveProjectileCollision(a_collisionDefinition);
+		return activeActor->attackCollisions.RemoveNodeCollision(a_collisionDefinition);
 	}
 
 	return false;
@@ -1440,6 +1440,27 @@ const RE::hkpCapsuleShape* PrecisionHandler::GetNodeCapsuleShape(RE::NiAVObject*
 	}
 
 	return nullptr;
+}
+
+bool PrecisionHandler::GetNodeDimensions(RE::NiAVObject* a_node, std::optional<float> a_length, std::optional<float> a_radius, RE::hkVector4& a_outVertexA, RE::hkVector4& a_outVertexB)
+{
+	if (auto capsuleShape = GetNodeCapsuleShape(a_node)) {
+		a_outVertexA = capsuleShape->vertexA;
+		a_outVertexB = capsuleShape->vertexB;
+	}
+
+	const float length = *a_length * *g_worldScale;
+	const float radius = *a_radius * *g_worldScale;
+
+	float originalLength = a_outVertexA.GetDistance3(a_outVertexB);
+	originalLength = fmax(radius * 2.f, 0.f);
+
+	const float finalLengthMult = length / originalLength;
+
+	a_outVertexA = a_outVertexA * finalLengthMult;
+	a_outVertexB = a_outVertexB;
+
+	return true;
 }
 
 bool PrecisionHandler::GetNodeAttackDimensions(RE::ActorHandle a_actorHandle, RE::NiAVObject* a_node, std::optional<float> a_overrideLength, float a_lengthMult, std::optional<float> a_overrideRadius, float a_radiusMult, RE::hkVector4& a_outVertexA, RE::hkVector4& a_outVertexB, float& a_outRadius)

@@ -79,11 +79,11 @@ namespace Messaging
 
 		// InterfaceVersion4+
 		virtual void AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::InventoryEntryData* a_weaponItem, bool a_bIsLeftHand, bool a_bTrailUseTrueLength, std::optional<TrailOverride> a_trailOverride) noexcept override;
-		virtual void AddTrailEffect(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, std::optional<TrailOverride> a_trailOverride, std::optional<TrailTransformOverride> a_transformOverride) noexcept override;
+		virtual void AddTrailEffect(RE::NiNode* a_trailParentNode, RE::TESObjectCELL* a_sourceActorParentCell, std::optional<TrailOverride> a_trailOverride, std::optional<TrailTransformOverride> a_transformOverride) noexcept override;
 
 		virtual void AddAttackCollision(RE::ActorHandle a_actorHandle, const RE::BSAnimationGraphEvent a_event) noexcept override;
-		virtual void AddAttackCollision(RE::ActorHandle a_actorHandle, CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile) noexcept override;
+		virtual void AddNodeCollision(RE::ActorHandle a_actorHandle, RE::NiNode* a_node, CollisionDefinition& a_collisionDefinition, std::optional<TrailTransformOverride> a_transformOverride) noexcept override;
 		virtual bool RemoveAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition) noexcept override;
-		virtual bool RemoveProjectileCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition) noexcept override;
+		virtual bool RemoveNodeCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition) noexcept override;
 	};
 }

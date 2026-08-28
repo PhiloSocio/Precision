@@ -89,11 +89,11 @@ public:
 	void StartCollision(RE::ActorHandle a_actorHandle, uint32_t a_activeGraphIdx);
 	bool AddAttack(RE::ActorHandle a_actorHandle, const AttackDefinition& a_attackDefinition);
 	void AddAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition);
-	void AddAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile);
+	void AddAttackCollision(RE::ActorHandle a_actorHandle, RE::NiNode* a_node, CollisionDefinition& a_collisionDefinition, std::optional<TrailTransformOverride> a_transformOverride);
 	bool RemoveRecoilCollision(RE::ActorHandle a_actorHandle);
 	bool RemoveAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition);
 	bool RemoveAttackCollision(RE::ActorHandle a_actorHandle, std::shared_ptr<AttackCollision> a_attackCollision);
-	bool RemoveProjectileCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition);
+	bool RemoveNodeCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition);
 	bool RemoveAllAttackCollisions(RE::ActorHandle a_actorHandle);
 	std::shared_ptr<AttackCollision> GetAttackCollision(RE::ActorHandle a_actorHandle, RE::NiAVObject* a_node) const;
 	std::shared_ptr<AttackCollision> GetAttackCollisionFromRecoilNode(RE::ActorHandle a_actorHandle, RE::NiAVObject* a_node) const;
@@ -131,7 +131,7 @@ public:
 
 	void ApplyHitImpulse(RE::ObjectRefHandle a_refHandle, RE::hkpRigidBody* a_rigidBody, const RE::NiPoint3& a_hitVelocity, const RE::hkVector4& a_hitPosition, float a_impulseMult, bool a_bIsActiveRagdoll, bool a_bAttackerIsPlayer, bool a_bIsDeferred = false);
 	void AddAttackTrail(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, RE::InventoryEntryData* a_weaponItem, bool a_bIsLeftHand, bool a_bTrailUseTrueLength, std::optional<TrailOverride> a_trailOverride);
-	void AddTrailEffect(RE::NiNode* a_trailParentNode, RE::ActorHandle a_sourceActorHandle, RE::TESObjectCELL* a_sourceActorParentCell, std::optional<TrailOverride> a_trailOverride, std::optional<TrailTransformOverride> a_transformOverride);
+	void AddTrailEffect(RE::NiNode* a_trailParentNode, RE::TESObjectCELL* a_sourceActorParentCell, std::optional<TrailOverride> a_trailOverride, std::optional<TrailTransformOverride> a_transformOverride);
 
 	static void AddHitstop(RE::ActorHandle a_actorHandle, float a_hitstopLength, bool a_bReceived);
 	static void UpdateHitstop(RE::ActorHandle a_actorHandle, float a_deltaTime);
@@ -158,6 +158,7 @@ public:
 	[[nodiscard]] static float GetWeaponAttackRadius(RE::ActorHandle a_actorHandle, RE::TESObjectWEAP* a_weapon, std::optional<float> a_overrideRadius = std::nullopt, float a_radiusMult = 1.f);
 
 	[[nodiscard]] static const RE::hkpCapsuleShape* GetNodeCapsuleShape(RE::NiAVObject* a_node);
+	static bool GetNodeDimensions(RE::NiAVObject* a_node, std::optional<float> a_length, std::optional<float> a_radius, RE::hkVector4& a_outVertexA, RE::hkVector4& a_outVertexB);
 	[[nodiscard]] static bool GetNodeAttackDimensions(RE::ActorHandle a_actorHandle, RE::NiAVObject* a_node, std::optional<float> a_overrideLength, float a_lengthMult, std::optional<float> a_overrideRadius, float a_radiusMult, RE::hkVector4& a_outVertexA, RE::hkVector4& a_outVertexB, float& a_outRadius);
 
 	[[nodiscard]] static float GetAttackLengthMult(RE::Actor* a_actor);

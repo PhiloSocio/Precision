@@ -27,8 +27,6 @@ namespace Hooks
 
 		FirstPersonStateHook::Hook();
 
-	//	ProjectileHook::Hook();
-
 		logger::trace("...success");
 	}
 
@@ -2166,38 +2164,4 @@ namespace Hooks
 
 		return _GetUnarmedReach(a_actor);
 	}
-
-	void ProjectileHook::GetLinearVelocityArrow(RE::Projectile* a_this, RE::NiPoint3& a_outVelocity)
-	{
-		if (a_this) {
-			auto& rtData = a_this->GetProjectileRuntimeData();
-			if (rtData.livingTime <= 0.f) {// *g_deltaTime) {
-				auto precisionHandler = PrecisionHandler::GetSingleton();
-				RE::ActorHandle actorHandle = rtData.shooter.get().get() ? (rtData.shooter.get()->As<RE::Actor>() ? rtData.shooter.get()->As<RE::Actor>()->GetHandle() : RE::ActorHandle()) : RE::ActorHandle();
-				CollisionDefinition collisionDefinition;
-				RE::BSAnimationGraphEvent event("Collision_Add", rtData.shooter.get().get(), "node(PROJECTILE)");
-				if (precisionHandler->ParseCollisionEvent(&event, CollisionEventType::kAdd, collisionDefinition)) {
-					precisionHandler->AddAttackCollision(actorHandle, collisionDefinition, a_this);
-					logger::info("AttackTrail node {} from {}"sv, event.payload.c_str(), actorHandle.native_handle());
-				}
-			}
-		}
-		return _GetLinearVelocityArrow(a_this, a_outVelocity);
-	}
-
-//	RE::ArrowProjectile* ProjectileHook::LaunchProjectile(RE::ArrowProjectile* a_result, RE::Projectile::LaunchData& a_data)
-//	{
-//		if (a_result) {
-//			auto& rtData = a_result->GetProjectileRuntimeData();
-//			auto precisionHandler = PrecisionHandler::GetSingleton();
-//			RE::ActorHandle actorHandle = rtData.shooter.get().get() ? (rtData.shooter.get()->As<RE::Actor>() ? rtData.shooter.get()->As<RE::Actor>()->GetHandle() : RE::ActorHandle()) : RE::ActorHandle();
-//			CollisionDefinition collisionDefinition;
-//			RE::BSAnimationGraphEvent event("Collision_Add", rtData.shooter.get().get(), "node(PROJECTILE)");
-//			precisionHandler->ParseCollisionEvent(&event, CollisionEventType::kAdd, collisionDefinition);
-//			precisionHandler->AddAttackCollision(actorHandle, collisionDefinition, a_result);
-//			logger::info("!AttackTrail node {}!"sv, event.payload.c_str());
-//		}
-//		logger::info("!AttackTrail node!"sv);
-//		return _LaunchProjectile(a_result, a_data);
-//	}
 }

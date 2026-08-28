@@ -6,7 +6,7 @@
 struct AttackCollision
 {
 	AttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition);
-	AttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile);
+	AttackCollision(RE::ActorHandle a_actorHandle, RE::NiNode* a_node, const CollisionDefinition& a_collisionDefinition, std::optional<TrailTransformOverride> a_transformOverride = std::nullopt);
 
 	~AttackCollision();
 
@@ -19,13 +19,14 @@ struct AttackCollision
 	std::optional<RE::NiPoint3> groundShake;
 
 	RE::ActorHandle actorHandle;
+	RE::NiPointer<RE::NiNode> collisionParentNode;
 	RE::NiPointer<RE::NiNode> attackCollisionNode;
 	RE::NiPointer<RE::NiNode> recoilCollisionNode;
 	float capsuleLength = 0.f;
 	float visualWeaponLength = 0.f;
 
 	bool Add(const CollisionDefinition& a_collisionDefinition);
-	bool Add(const CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile);
+	bool AddForNode(const CollisionDefinition& a_collisionDefinition);
 	bool Remove();
 	bool RemoveRecoilCollision();
 
@@ -71,11 +72,11 @@ struct AttackCollisions
 	[[nodiscard]] std::shared_ptr<AttackCollision> GetAttackCollisionFromRecoilNode(RE::NiAVObject* a_node) const;
 	[[nodiscard]] std::shared_ptr<AttackCollision> GetAttackCollision(std::string_view a_nodeName) const;
 	void AddAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition);
-	void AddAttackCollision(RE::ActorHandle a_actorHandle, const CollisionDefinition& a_collisionDefinition, RE::Projectile* a_projectile);
+	void AddAttackCollision(RE::ActorHandle a_actorHandle, RE::NiNode* a_node, const CollisionDefinition& a_collisionDefinition, std::optional<TrailTransformOverride> a_transformOverride);
 	bool RemoveRecoilCollision();
 	[[nodiscard]] bool RemoveAttackCollision(const CollisionDefinition& a_collisionDefinition);
 	[[nodiscard]] bool RemoveAttackCollision(std::shared_ptr<AttackCollision> a_attackCollision);
-	[[nodiscard]] bool RemoveProjectileCollision(const CollisionDefinition& a_collisionDefinition);
+	[[nodiscard]] bool RemoveNodeCollision(const CollisionDefinition& a_collisionDefinition);
 	bool RemoveAllAttackCollisions();
 
 	void OnCollisionRemoved();
@@ -103,7 +104,7 @@ private:
 	mutable Lock lock;
 
 	std::vector<std::shared_ptr<AttackCollision>> _attackCollisions{};
-	std::vector<std::shared_ptr<AttackCollision>> _projectileCollisions{};
+	std::vector<std::shared_ptr<AttackCollision>> _nodeCollisions{};
 
 	// Hit refs shared by collisions with assigned IDs
 	std::unordered_map<uint8_t, HitRefs> _IDHitRefs{};

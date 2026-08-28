@@ -349,29 +349,6 @@ namespace Hooks
 		static inline REL::Relocation<decltype(bhkCollisionFilter_CompareFilterInfo7)> _bhkCollisionFilter_CompareFilterInfo7;
 	};
 
-	class ProjectileHook
-	{
-	public:
-		static void Hook()
-		{
-			REL::Relocation<std::uintptr_t> ArrowProjectileVtbl{ RE::VTABLE_ArrowProjectile[0] };
-			_GetLinearVelocityArrow     = ArrowProjectileVtbl.write_vfunc(0x86, GetLinearVelocityArrow);
-
-			REL::Relocation<std::uintptr_t> hook1{ RELOCATION_ID(42928, 44108) };	// 0x7ff613e7a7b0 - 000042E8 = 7FF613E764C8
-
-		//	auto& trampoline = SKSE::GetTrampoline();
-		//	_LaunchProjectile = trampoline.write_call<5>(hook1.address() + RELOCATION_OFFSET(0x384, 0x38C), LaunchProjectile);
-			logger::info("projectiles hooked"sv);
-		}
-
-	private:
-    	static void GetLinearVelocityArrow(RE::Projectile* a_this, RE::NiPoint3& a_outVelocity);
-	//	static RE::ArrowProjectile* LaunchProjectile(RE::ArrowProjectile* a_result, RE::Projectile::LaunchData& a_data);
-
-		static inline REL::Relocation<decltype(GetLinearVelocityArrow)>     _GetLinearVelocityArrow;
-	//	static inline REL::Relocation<decltype(LaunchProjectile)> _LaunchProjectile;
-	};
-
 	bool ActorHasAttackCollision(const RE::ActorHandle a_actorHandle);
 
 	void Install();
